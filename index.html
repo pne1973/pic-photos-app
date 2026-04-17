@@ -3,128 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Feedback Hub v34.06</title>
+    <title>AI Feedback Hub</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --tg-blue: #0088cc;
-            --bg-color: #f0f2f5;
-            --card-bg: #ffffff;
-            --text-main: #1c1c1e;
-            --text-sec: #8e8e93;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #131313;
-                --card-bg: #1c1c1e;
-                --text-main: #ffffff;
-                --text-sec: #a1a1aa;
-            }
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-
+        :root { --tg-blue: #0088cc; --bg-color: #f0f2f5; --card-bg: #ffffff; --text-main: #1c1c1e; --text-sec: #8e8e93; }
+        @media (prefers-color-scheme: dark) { :root { --bg-color: #131313; --card-bg: #1c1c1e; --text-main: #ffffff; --text-sec: #a1a1aa; } }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 16px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; overflow: hidden; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .balance-pill { background: var(--tg-blue); color: white; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 14px; }
-        
         .progress-wrapper { width: 100%; height: 6px; background: rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 15px; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--tg-blue); width: 0%; transition: width 0.4s ease; }
-
         .instruction { text-align: center; font-size: 16px; font-weight: 600; margin-bottom: 15px; min-height: 40px; color: var(--text-sec); }
-
-        /* GRID: Side-by-Side Images */
-        .compare-grid {
-            display: flex;
-            flex-direction: row;
-            gap: 12px;
-            flex-grow: 1;
-            margin-bottom: 20px;
-            opacity: 0; /* Hidden initially */
-            transition: opacity 0.5s ease;
-            max-height: 60vh;
-        }
-
-        .image-card {
-            flex: 1;
-            background: var(--card-bg);
-            border-radius: 18px;
-            overflow: hidden;
-            position: relative;
-            border: 3px solid transparent;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-            transition: transform 0.1s;
-            cursor: pointer;
-            display: flex;
-        }
-
+        .compare-grid { display: flex; flex-direction: row; gap: 12px; flex-grow: 1; margin-bottom: 20px; transition: opacity 0.3s; }
+        .image-card { flex: 1; background: var(--card-bg); border-radius: 18px; overflow: hidden; position: relative; border: 3px solid transparent; box-shadow: 0 8px 15px rgba(0,0,0,0.1); cursor: pointer; display: flex; }
         .image-card:active { transform: scale(0.96); border-color: var(--tg-blue); }
         .image-card img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .label {
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.7); color: white;
-            padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: bold;
-        }
-
-        /* BONUS OVERLAY */
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); backdrop-filter: blur(5px);
-            display: none; flex-direction: column;
-            justify-content: center; align-items: center;
-            z-index: 1000; padding: 25px;
-        }
-        
-        .ad-box {
-            background: var(--card-bg); border-radius: 24px; padding: 25px;
-            width: 90%; max-width: 340px; text-align: center;
-        }
-
-        .btn-claim {
-            background: var(--tg-blue); color: white; border: none;
-            padding: 16px; border-radius: 14px; font-size: 18px;
-            font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%;
-        }
-
-        #loader { 
-            position: absolute; top: 55%; left: 50%; 
-            transform: translate(-50%, -50%); color: var(--text-sec); 
-            font-weight: 500; text-align: center;
-        }
+        .label { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; padding: 25px; }
+        .ad-box { background: var(--card-bg); border-radius: 24px; padding: 25px; width: 90%; max-width: 340px; text-align: center; color: var(--text-main); }
+        .btn-claim { background: var(--tg-blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span style="font-weight: bold; letter-spacing: 0.5px;">AI TRAINER</span>
+        <span style="font-weight: bold;">AI TRAINER</span>
         <div class="balance-pill" id="balanceDisplay">0 XP</div>
     </div>
 
     <div class="progress-wrapper"><div class="progress-bar" id="progressBar"></div></div>
-
-    <div class="instruction" id="questionText">Syncing with Node...</div>
-
-    <div id="loader">Initializing AI Tasks...<br><small>Optimizing for your region</small></div>
+    <div class="instruction" id="questionText">Loading...</div>
 
     <div class="compare-grid" id="gameArea">
         <div class="image-card" onclick="castVote('A')">
-            <img id="imgA" src="">
+            <img id="imgA" src="https://placehold.co/600x900?text=Loading+A">
             <div class="label">OPTION A</div>
         </div>
         <div class="image-card" onclick="castVote('B')">
-            <img id="imgB" src="">
+            <img id="imgB" src="https://placehold.co/600x900?text=Loading+B">
             <div class="label">OPTION B</div>
         </div>
     </div>
@@ -132,84 +48,44 @@
     <div class="overlay" id="adOverlay">
         <div class="ad-box">
             <div style="font-size: 40px;">💎</div>
-            <h2>Verification Required</h2>
-            <p style="color: var(--text-sec); font-size: 14px; margin: 15px 0;">
-                Click the button below to claim your <b>250 XP bonus</b> and continue your training session.
-            </p>
+            <h2>Bonus Unlocked!</h2>
+            <p>Click to claim your <b>250 XP bonus</b>.</p>
             <button class="btn-claim" onclick="openAdLink()">CLAIM 250 XP</button>
         </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        const ADSTERRA_URL = "https://www.google.com"; // REPLACE WITH YOUR LINK
+        // SOLUÇÃO PARA O ERRO: Checar se o Telegram existe antes de usar
+        const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+        const ADSTERRA_URL = "https://www.google.com"; 
         
         let sessionVotes = 0;
         let totalXP = 0;
-        let imagesLoaded = 0;
-        let safetyTimer = null;
-
-        const questions = [
-            "Which AI render is more realistic?",
-            "Which UI design is cleaner?",
-            "Which photo has better lighting?",
-            "Which logo feels more modern?",
-            "Which portrait is more natural?"
-        ];
-
-        function forceShowUI() {
-            document.getElementById('gameArea').style.opacity = "1";
-            document.getElementById('loader').style.display = 'none';
-        }
-
-        function checkBothLoaded() {
-            imagesLoaded++;
-            if (imagesLoaded >= 2) {
-                clearTimeout(safetyTimer);
-                forceShowUI();
-            }
-        }
+        const questions = ["More Realistic?", "Better UI?", "Nicest Light?", "Modern Style?"];
 
         function loadNewPair() {
-            imagesLoaded = 0;
-            document.getElementById('gameArea').style.opacity = "0";
-            document.getElementById('loader').style.display = 'block';
-
-            // Safety fallback: if images fail, show UI after 2.5s anyway
-            safetyTimer = setTimeout(forceShowUI, 2500);
-
-            const seedA = Math.floor(Math.random() * 2000);
-            const seedB = seedA + 5;
+            const seedA = Math.floor(Math.random() * 5000);
+            const seedB = seedA + 10;
             
-            const imgA = document.getElementById('imgA');
-            const imgB = document.getElementById('imgB');
-
-            // Using "seed" to avoid caching issues and bypass some CORS blocks
-            imgA.src = `https://picsum.photos/seed/${seedA}/600/900`;
-            imgB.src = `https://picsum.photos/seed/${seedB}/600/900`;
-
-            imgA.onload = checkBothLoaded;
-            imgB.onload = checkBothLoaded;
-            
-            imgA.onerror = () => { imgA.src = "https://placehold.co/600x900?text=Node+A"; checkBothLoaded(); };
-            imgB.onerror = () => { imgB.src = "https://placehold.co/600x900?text=Node+B"; checkBothLoaded(); };
+            document.getElementById('imgA').src = `https://picsum.photos/seed/${seedA}/600/900`;
+            document.getElementById('imgB').src = `https://picsum.photos/seed/${seedB}/600/900`;
 
             const qIndex = Math.floor(Math.random() * questions.length);
             document.getElementById('questionText').innerText = questions[qIndex];
         }
 
         function castVote(choice) {
-            tg.HapticFeedback.impactOccurred('light');
-            sessionVotes++;
+            // Vibração apenas se estiver no Telegram
+            if (tg && tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
             
+            sessionVotes++;
             let progress = (sessionVotes % 5) * 20;
-            if (sessionVotes % 5 === 0 && sessionVotes !== 0) progress = 100;
-            document.getElementById('progressBar').style.width = progress + "%";
+            document.getElementById('progressBar').style.width = (progress === 0 && sessionVotes > 0 ? 100 : progress) + "%";
 
             if (sessionVotes % 5 === 0) {
-                setTimeout(() => {
-                    document.getElementById('adOverlay').style.display = 'flex';
-                }, 300);
+                document.getElementById('adOverlay').style.display = 'flex';
             } else {
                 loadNewPair();
             }
@@ -224,8 +100,12 @@
             loadNewPair();
         }
 
-        tg.ready();
-        tg.expand();
+        // Inicialização Segura
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
         loadNewPair();
     </script>
 </body>
