@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Feedback Hub</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-blue: #0088cc;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #1c1c1e;
+            --text-sec: #8e8e93;
+        }
+
+        /* Telegram Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #131313;
+                --card-bg: #1c1c1e;
+                --text-main: #ffffff;
+                --text-sec: #8e8e93;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Header & Progress */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .balance-pill { background: var(--tg-blue); color: white; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 14px; }
+        
+        .progress-container { width: 100%; height: 6px; background: #e5e5ea; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--tg-blue); width: 0%; transition: width 0.4s ease; }
+
+        /* Task Area */
+        .instruction { text-align: center; font-size: 17px; font-weight: 600; margin-bottom: 15px; min-height: 44px; }
+        
+        .compare-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+
+        .image-card {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.1s, border-color 0.2s;
+            cursor: pointer;
+        }
+
+        .image-card:active { transform: scale(0.98); border-color: var(--tg-blue); }
+        .image-card img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .label {
+            position: absolute; bottom: 12px; left: 12px;
+            background: rgba(0,0,0,0.6); color: white;
+            padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: bold;
+        }
+
+        /* Ad Overlay */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            display: none; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 1000; text-align: center; padding: 20px;
+        }
+        .btn-claim {
+            background: var(--tg-blue); color: white; border: none;
+            padding: 18px 40px; border-radius: 12px; font-size: 18px;
+            font-weight: bold; cursor: pointer; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <span style="font-weight: bold; opacity: 0.8;">AI Feedback Node</span>
+        <div class="balance-pill" id="balanceDisplay">0 XP</div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="instruction" id="questionText">Loading visual task...</div>
+
+    <div class="compare-grid" id="gameArea">
+        <div class="image-card" onclick="castVote('A')">
+            <img id="imgA" src="">
+            <div class="label">OPTION A</div>
+        </div>
+        <div class="image-card" onclick="castVote('B')">
+            <img id="imgB" src="">
+            <div class="label">OPTION B</div>
+        </div>
+    </div>
+
+    <div class="overlay" id="adOverlay">
+        <h1 style="font-size: 32px;">⚡ Bonus Round!</h1>
+        <p style="color: var(--text-sec); font-size: 18px;">Complete this short verification to claim <b>250 XP</b> and continue training.</p>
+        <button class="btn-claim" onclick="openAdLink()">CLAIM XP & CONTINUE</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const ADSTERRA_URL = "YOUR_DIRECT_LINK_HERE"; // Replace with your Adsterra Direct Link
+        
+        let sessionVotes = 0;
+        let totalXP = 0;
+
+        // Sample Questions Bank
+        const questions = [
+            "Which UI design looks cleaner?",
+            "Which AI character is more realistic?",
+            "Which photo has better lighting?",
+            "Which logo feels more professional?",
+            "Which cat looks cuter?"
+        ];
+
+        function loadNewPair() {
+            const randA = Math.floor(Math.random() * 1000);
+            const randB = Math.floor(Math.random() * 1000) + 1001;
+            
+            document.getElementById('imgA').src = `https://picsum.photos/seed/${randA}/600/400`;
+            document.getElementById('imgB').src = `https://picsum.photos/seed/${randB}/600/400`;
+            
+            const qIndex = Math.floor(Math.random() * questions.length);
+            document.getElementById('questionText').innerText = questions[qIndex];
+            
+            // UI Smooth transition
+            document.getElementById('gameArea').style.opacity = 1;
+        }
+
+        function castVote(choice) {
+            tg.HapticFeedback.impactOccurred('medium');
+            sessionVotes++;
+            
+            // Update Progress
+            let progress = (sessionVotes % 5) * 20;
+            if (sessionVotes % 5 === 0) progress = 100;
+            document.getElementById('progressBar').style.width = progress + "%";
+
+            // Check for Ad Break
+            if (sessionVotes % 5 === 0) {
+                setTimeout(() => {
+                    document.getElementById('adOverlay').style.display = 'flex';
+                }, 300);
+            } else {
+                document.getElementById('gameArea').style.opacity = 0.3;
+                setTimeout(loadNewPair, 200);
+            }
+        }
+
+        function openAdLink() {
+            window.open(ADSTERRA_URL, '_blank');
+            
+            // Add Reward
+            totalXP += 250;
+            document.getElementById('balanceDisplay').innerText = totalXP + " XP";
+            
+            // Reset UI
+            document.getElementById('adOverlay').style.display = 'none';
+            document.getElementById('progressBar').style.width = "0%";
+            loadNewPair();
+        }
+
+        // Initialize
+        tg.ready();
+        tg.expand();
+        loadNewPair();
+    </script>
+</body>
+</html>
